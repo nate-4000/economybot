@@ -21,6 +21,16 @@ users = gas.get("users.json")
 sales = gas.get("sales.json")
 
 @comm.command()
+@ac.checks.has_permissions(administrator=True)
+async def reloadjson(ctx):
+    global stocks
+    global users
+    global sales
+    stocks = gas.get("stocks.json")
+    users = gas.get("users.json")
+    sales = gas.get("sales.json")
+
+@comm.command()
 async def stockquery(ctx, stock: str):
     """Tells the current value of a stock."""
     if stock.upper() in stocks.keys():
@@ -40,6 +50,8 @@ async def stocklist(ctx):
 async def price(ctx, stock: str):
     """Tells a list of current prices for that stock."""
     stock = stock.upper()
+    if not stock in sales.keys():
+        await ctx.response.send_message("that is not valid stock!")
     d = sales[stock]
     respo = "### top sales for `%s`:\n" % stock
     dv = d.values()
