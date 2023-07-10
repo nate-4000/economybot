@@ -11,3 +11,4 @@ differences from cellmarket:
 |buy orders persist|[x]|[ ]|
 |cell machine themed|[x]|[ ]|
 |open source|[ ]|[x]|
+|currency symbol|$|Γ|
