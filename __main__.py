@@ -52,37 +52,84 @@ async def price(ctx, stock: str):
     stock = stock.upper()
     if not stock in sales.keys():
         await ctx.response.send_message("that is not valid stock!")
+        return
     d = sales[stock]
     respo = "### top sales for `%s`:\n" % stock
     dv = d.values()
+    if not len(dv):
+        await ctx.response.send_message("no one is selling `%s`!" % stock)
     i = 0
     for v in sorted(dv, reverse=True):
         respo += "- Γ%d\n" % (v[1])
         i += 1
         if i > 5:
             break
-    respo += "highest price: %d\nlowest price: %d" % (max(dv,key=lambda x: x[1])[1], min(dv, key=lambda x: x[1])[1])
+    respo += "highest price: Γ%d\nlowest price: Γ%d" % (max(dv,key=lambda x: x[1])[1], min(dv, key=lambda x: x[1])[1])
     await ctx.response.send_message(respo)
 
 @comm.command()
-async def buy(ctx, stock: str, amount: int):
+async def buy(ctx, stock: str, price: int, amount: int = 1):
+    userid = str(ctx.user.id)
+    stock = stock.upper()
+    if amount < 1:
+        await ctx.response.send_message("please explain to me how to buy negative stocks")
+        return
+    internal = True
+    if amount == 1:
+        internal = False
+
+    if not stock in stocks.keys():
+        await ctx.response.send_message("that is not valid stock!")
+        return
+
+    if len(sales[stock]) == 0:
+        await ctx.response.send_message("nobody is selling `%s` at that price right now :(" % stock)
+        return
+
+    for x in range(amount):
+        await _buy(ctx, stock, price, internal)
+        balance = users[userid][0]
+        e = sales[stock].copy()
+        
+        if userid in e.keys():
+            e.pop(userid)
+
+        if len(e) == 0:
+            await ctx.response.send_message("nobody is selling `%s` at that price right now :(" % stock)
+            return
+        if balance < amount:
+            return
+
+async def _buy(ctx, stock: str, amount: int, internal):
     """Buy stocks at some price!"""
     userid = str(ctx.user.id)
     stock = stock.upper()
     if not stock in stocks.keys():
-        await ctx.response.send_message("that is not valid stock!")
+        if not internal:
+            await ctx.response.send("that is not valid stock!")
+        else:
+            await ctx.channel.send_message("this isnt right, didnt i already catch the error before this?\noh, btw, thats not valid stock")
         return
     if not userid in users.keys():
         users[userid] = [360, {}]
     balance = users[userid][0]
     if amount > balance:
-        await ctx.response.send_message("you dont have enough money!")
+        if internal:
+            await ctx.channel.send("you are out of money!")
+        else:
+            await ctx.response.send_message("you dont have enough money!")
         return
     d = sales[stock]
     for k, v in zip(d.keys(), d.values()):
         if amount >= v[1] and k != userid:
-            await ctx.response.send_message("you bought `%s` from <@%s> for Γ%d" % (stock, k, v[1]))
+            if internal:
+                await ctx.channel.send("you bought `%s` from <@%s> for Γ%d" % (stock, k, v[1]))
+            else:
+                await ctx.response.send_message("you bought `%s` from <@%s> for Γ%d" % (stock, k, v[1]))
             users[userid][0] -= v[1]
+            if not k in users.keys():
+                users[k] = [360, {}]
+            users[k][0] += v[1]
             if stock in users[userid][1].keys():
                 users[userid][1][stock] += 1
             else:
@@ -96,6 +143,9 @@ async def buy(ctx, stock: str, amount: int):
             gas.store("stocks.json", stocks)
             return
     else:
+        if internal:
+            await ctx.channel.send("looks like you bought the market out of `%s` \:(" % stock)
+            return
         await ctx.response.send_message("looks like no one is selling `%s` at that price \:(" % stock)
 
 @comm.command()
@@ -124,6 +174,9 @@ async def sell(ctx, stock: str, price: int):
 async def balance(ctx):
     """Check your balance and owned stocks."""
     userid = str(ctx.user.id)
+    if not userid in users.keys():
+        users[userid] = [360, {}]
+        gas.store("users.json", users)
     respo = "your balance: Γ"
     respo += str(users[userid][0])
     respo += "\n"
