@@ -6,8 +6,8 @@ differences from cellmarket:
 |selling at different prices|[x]|[ ]|
 |inventory value|[x]|[ ]|
 |net worth|[x]|[ ]|
-|taxes|[x]|[ ]|
-|money leakage|[x]|[ ]|
+|untaxed transfers|[ ]|[x]|
+|watertight economy|[ ]|[x]|
 |buy orders persist|[x]|[ ]|
 |cell machine themed|[x]|[ ]|
 |open source|[ ]|[x]|
